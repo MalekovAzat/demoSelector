@@ -1,0 +1,14 @@
+version: "3.1"
+
+services:
+  backend:
+    build: ./selector-backend
+    ports:
+      - 3001:3001
+
+  selector:
+    build: ./selector
+    depends_on:
+      - backend
+    ports:
+      - 3000:3000
