@@ -55,6 +55,14 @@ app.get("/items", (req, res) => {
 app.post("/update-item-position", (req, res) => {
   const { oldPos, newPos } = req.body;
 
+  if (!("oldPos" in req.body) || !("newPos" in req.body)) {
+    res.statusCode = 400;
+    res.json({
+      message: "Add oldPos and newPos to request body",
+    });
+    return;
+  }
+
   items = arrayMove(items, oldPos, newPos);
 
   res.statusCode = 201;
@@ -65,6 +73,14 @@ app.post("/update-item-position", (req, res) => {
 
 app.post("/update-item-state", (req, res) => {
   const { id, state } = req.body;
+
+  if (!("id" in req.body) || !("state" in req.body)) {
+    res.statusCode = 400;
+    res.json({
+      message: "Add id and state to request body",
+    });
+    return;
+  }
 
   const pos = findPositionById(id, items);
   items[pos].selected = state;

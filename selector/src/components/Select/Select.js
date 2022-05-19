@@ -11,6 +11,7 @@ import {
   fetchSelectItems,
   updateSelectItemPosition,
 } from "./UpdateSelectRequests";
+import fetchData from "../../tools/fetchData";
 
 function findPositionById(id, array) {
   return array.findIndex((element) => {
@@ -27,21 +28,16 @@ function getIdByEvent(event) {
 function Select() {
   const [selectorItemsArray, setSelectorItemsArray] = useState([]);
   const [searchState, setSearchState] = useState("");
-
-  let count = 20;
-  let dragElementId = -1;
+  const [selectorItemsCount, setSelectorItemsCount] = useState(0);
 
   function updateSelectorItemsArray(fetchedData) {
     const prevselectorItemsArray = [...selectorItemsArray];
     prevselectorItemsArray.push(...fetchedData.items);
-    count += fetchedData.count;
-
+    setSelectorItemsCount(fetchedData.count);
     setSelectorItemsArray(prevselectorItemsArray);
   }
 
   function resetSelectorItemsArray(fetchedData) {
-    count = fetchedData.count;
-
     setSelectorItemsArray(fetchedData.items);
   }
 
@@ -52,7 +48,7 @@ function Select() {
   function onSearchStringChanged(e) {
     const searchStr = e.target.value;
     setSearchState(searchStr);
-    fetchSelectItems(count, 0, searchStr).then(resetSelectorItemsArray);
+    fetchSelectItems(20, 0, searchStr).then(resetSelectorItemsArray);
   }
 
   function onSelectItemClicked(event) {
@@ -77,21 +73,24 @@ function Select() {
       return;
     }
 
-    if (dragElementId !== id) {
-      const oldPos = findPositionById(dragElementId, selectorItemsArray);
+    const transferedId = parseInt(event.dataTransfer.getData("text/plain"));
+
+    if (transferedId !== id) {
+      const oldPos = findPositionById(transferedId, selectorItemsArray);
       const newPos = findPositionById(id, selectorItemsArray);
 
       updateSelectItemPosition(oldPos, newPos).then((success) => {
         if (success) {
-          const newselectorItemsArray = arrayMove(
+          const newSelectorItemsArray = arrayMove(
             selectorItemsArray,
             oldPos,
             newPos
           );
-          setSelectorItemsArray(newselectorItemsArray);
+          setSelectorItemsArray(newSelectorItemsArray);
         }
       });
     }
+    event.dataTransfer.clearData();
   }
 
   function onDragStart(event) {
@@ -101,7 +100,9 @@ function Select() {
     }
 
     event.target.style.opacity = "0.4";
-    dragElementId = id;
+
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", id);
   }
 
   function onDragEnd(event) {
@@ -115,9 +116,11 @@ function Select() {
   function onScroll(e) {
     if (e.target.offsetHeight + e.target.scrollTop >= e.target.scrollHeight) {
       const lastElementIndex = selectorItemsArray.length;
-      fetchSelectItems(5, lastElementIndex, searchState).then(
-        updateSelectorItemsArray
-      );
+      if (selectorItemsCount !== selectorItemsArray.length) {
+        fetchSelectItems(5, lastElementIndex, searchState).then(
+          updateSelectorItemsArray
+        );
+      }
     }
   }
 
